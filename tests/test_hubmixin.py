@@ -24,10 +24,11 @@ def require_torch(test_case):
     Decorator marking a test that requires PyTorch.
     These tests are skipped when PyTorch isn't installed.
     """
-    if not is_torch_available():
-        return unittest.skip("test requires PyTorch")(test_case)
-    else:
-        return test_case
+    return (
+        test_case
+        if is_torch_available()
+        else unittest.skip("test requires PyTorch")(test_case)
+    )
 
 
 if is_torch_available():
