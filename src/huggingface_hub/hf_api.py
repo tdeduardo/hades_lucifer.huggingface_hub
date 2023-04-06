@@ -139,9 +139,7 @@ def repo_type_and_id_from_hf_id(hf_id: str, hub_url: Optional[str] = None) -> Tu
     is_hf_url = hub_url in hf_id and "@" not in hf_id
 
     HFFS_PREFIX = "hf://"
-    if hf_id.startswith(HFFS_PREFIX):  # Remove "hf://" prefix if exists
-        hf_id = hf_id[len(HFFS_PREFIX) :]
-
+    hf_id = hf_id.removeprefix(HFFS_PREFIX)
     url_segments = hf_id.split("/")
     is_hf_id = len(url_segments) <= 3
 
@@ -480,8 +478,7 @@ class DatasetInfo(ReprMixin):
             setattr(self, k, v)
 
     def __str__(self):
-        r = f"Dataset Name: {self.id}, Tags: {self.tags}"
-        return r
+        return f"Dataset Name: {self.id}, Tags: {self.tags}"
 
 
 class SpaceInfo(ReprMixin):
@@ -553,8 +550,7 @@ class MetricInfo(ReprMixin):
             setattr(self, k, v)
 
     def __str__(self):
-        r = f"Metric Name: {self.id}"
-        return r
+        return f"Metric Name: {self.id}"
 
 
 class ModelSearchArguments(AttributeDictionary):
@@ -1067,13 +1063,9 @@ class HfApi:
         """
         Unpacks a [`ModelFilter`] into something readable for `list_models`
         """
-        model_str = ""
         tags = []
 
-        # Handling author
-        if model_filter.author is not None:
-            model_str = f"{model_filter.author}/"
-
+        model_str = "" if model_filter.author is None else f"{model_filter.author}/"
         # Handling model_name
         if model_filter.model_name is not None:
             model_str += model_filter.model_name
@@ -1106,7 +1098,7 @@ class HfApi:
         query_dict: Dict[str, Any] = {}
         if model_str is not None:
             query_dict["search"] = model_str
-        if len(tags) > 0:
+        if tags:
             query_dict["tags"] = tags
         if isinstance(model_filter.language, list):
             filter_list.extend(model_filter.language)
@@ -1361,25 +1353,25 @@ class HfApi:
         headers = self._build_hf_headers(token=token)
         params: Dict[str, Any] = {}
         if filter is not None:
-            params.update({"filter": filter})
+            params["filter"] = filter
         if author is not None:
-            params.update({"author": author})
+            params["author"] = author
         if search is not None:
-            params.update({"search": search})
+            params["search"] = search
         if sort is not None:
-            params.update({"sort": sort})
+            params["sort"] = sort
         if direction is not None:
-            params.update({"direction": direction})
+            params["direction"] = direction
         if limit is not None:
-            params.update({"limit": limit})
+            params["limit"] = limit
         if full:
-            params.update({"full": True})
+            params["full"] = True
         if linked:
-            params.update({"linked": True})
+            params["linked"] = True
         if datasets is not None:
-            params.update({"datasets": datasets})
+            params["datasets"] = datasets
         if models is not None:
-            params.update({"models": models})
+            params["models"] = models
 
         data = paginate(path, params=params, headers=headers)
         if limit is not None:
@@ -2374,7 +2366,7 @@ class HfApi:
                 f"`parent_commit` is not a valid commit OID. It must match the following regex: {REGEX_COMMIT_OID}"
             )
 
-        if commit_message is None or len(commit_message) == 0:
+        if commit_message is None or not commit_message:
             raise ValueError("`commit_message` can't be empty, please pass a value.")
 
         commit_description = commit_description if commit_description is not None else ""
@@ -3185,14 +3177,14 @@ class HfApi:
             ({username}/{model_id}) if no organization is passed, and under the
             organization namespace ({organization}/{model_id}) otherwise.
         """
-        if organization is None:
-            if "/" in model_id:
-                username = model_id.split("/")[0]
-            else:
-                username = self.whoami(token=token)["name"]  # type: ignore
-            return f"{username}/{model_id}"
-        else:
+        if organization is not None:
             return f"{organization}/{model_id}"
+        username = (
+            model_id.split("/")[0]
+            if "/" in model_id
+            else self.whoami(token=token)["name"]
+        )
+        return f"{username}/{model_id}"
 
     @validate_hf_hub_args
     def get_repo_discussions(
@@ -3407,12 +3399,7 @@ class HfApi:
             description = description.strip()
         description = (
             description
-            if description
-            else (
-                f"{'Pull Request' if pull_request else 'Discussion'} opened with the"
-                " [huggingface_hub Python"
-                " library](https://huggingface.co/docs/huggingface_hub)"
-            )
+            or f"{'Pull Request' if pull_request else 'Discussion'} opened with the [huggingface_hub Python library](https://huggingface.co/docs/huggingface_hub)"
         )
 
         headers = self._build_hf_headers(token=token, is_write_action=True)
@@ -4142,10 +4129,7 @@ class HfApi:
         try:
             hf_raise_for_status(r)
         except HTTPError as err:
-            if exist_ok and err.response.status_code == 409:
-                # Repo already exists and `exist_ok=True`
-                pass
-            else:
+            if not exist_ok or err.response.status_code != 409:
                 raise
 
         return RepoUrl(r.json()["url"], endpoint=self.endpoint)

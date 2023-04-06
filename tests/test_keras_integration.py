@@ -436,7 +436,7 @@ class HubKerasSequentialTest(CommonKerasTest):
         self.assertEqual(model_info.modelId, repo_id)
 
         with SoftTemporaryDirectory() as tmpdir:
-            Repository(local_dir=tmpdir, clone_from=ENDPOINT_STAGING + "/" + repo_id)
+            Repository(local_dir=tmpdir, clone_from=f"{ENDPOINT_STAGING}/{repo_id}")
             from_pretrained_keras(tmpdir)
 
         self._api.delete_repo(repo_id=f"{REPO_NAME}")

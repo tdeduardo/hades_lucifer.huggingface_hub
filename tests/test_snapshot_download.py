@@ -318,7 +318,7 @@ class SnapshotDownloadTests(unittest.TestCase):
     def check_download_model_with_pattern(self, pattern, allow=True):
         # Test `main` branch
         allow_patterns = pattern if allow else None
-        ignore_patterns = pattern if not allow else None
+        ignore_patterns = None if allow else pattern
 
         with SoftTemporaryDirectory() as tmpdir:
             storage_folder = snapshot_download(

@@ -21,24 +21,12 @@ install_requires = [
     "packaging>=20.9",
 ]
 
-extras = {}
-
-extras["cli"] = [
-    "InquirerPy==0.3.4",
-    # Note: installs `prompt-toolkit` in the background
-]
-
-extras["torch"] = [
-    "torch",
-]
-
-extras["fastai"] = [
-    "toml",
-    "fastai>=2.4",
-    "fastcore>=1.3.27",
-]
-
-extras["tensorflow"] = ["tensorflow", "pydot", "graphviz"]
+extras = {
+    "cli": ["InquirerPy==0.3.4"],
+    "torch": ["torch"],
+    "fastai": ["toml", "fastai>=2.4", "fastcore>=1.3.27"],
+    "tensorflow": ["tensorflow", "pydot", "graphviz"],
+}
 
 extras["testing"] = extras["cli"] + [
     "jedi",
